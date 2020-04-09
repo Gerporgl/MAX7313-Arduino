@@ -26,17 +26,19 @@ MAX7313::MAX7313(uint8_t addr, TwoWire *i2c){
 
 void MAX7313::begin() {
   _i2c->begin();
-  write8(MAX7313_PORTS_CONF_00_07,    0x00);  // pinmode: 0 = OUTPUT / 1 = INPUT
-  write8(MAX7313_PORTS_CONF_08_15,    0x00);  
+  write8(MAX7313_PORTS_CONF_00_07,    0xFF);  // pinmode: 0 = OUTPUT / 1 = INPUT
+  write8(MAX7313_PORTS_CONF_08_15,    0xFF);  // pinmode: 0 = OUTPUT / 1 = INPUT
   write8(MAX7313_BLINK_PHASE_0_00_07, 0xff);
   write8(MAX7313_BLINK_PHASE_0_08_15, 0xff);
-  write8(MAX7313_CONFIGURATION,       0x01);  // enable blink phase
-  write8(MAX7313_OUT_INT_MA_16,       0xff);
+  write8(MAX7313_BLINK_PHASE_1_00_07, 0xff);
+  write8(MAX7313_BLINK_PHASE_1_08_15, 0xff);
+  write8(MAX7313_CONFIGURATION,       0x00); 
+  write8(MAX7313_OUT_INT_MA_16,       0xFF);
 }
 
 void MAX7313::pinMode(uint8_t num, uint8_t mode){
   uint8_t mask = 16, addr = 0;
-  if(mode > 7){
+  if(num > 7){
     mask = 8;
     addr = MAX7313_PORTS_CONF_08_15;
   } else {
@@ -50,7 +52,9 @@ void MAX7313::pinMode(uint8_t num, uint8_t mode){
   }
   write8(addr, reg);
 }
-
+// Certainly a bug, this should be a class function, otherwise it redefines the 
+// global digitalWrite of arduino!
+/*
 void digitalWrite(uint8_t num, uint8_t val){
   if(val == HIGH)
     val = 15;
@@ -58,7 +62,7 @@ void digitalWrite(uint8_t num, uint8_t val){
     val = 0;
   analogWrite(num, val);
 }
-
+*/
 void MAX7313::analogWrite(uint8_t num, uint8_t val){
   if(val > 0xf)
     val = 0xf;
@@ -115,7 +119,7 @@ void MAX7313::clearInterrupt(void){
 }
 
 uint8_t MAX7313::digitalRead(uint8_t num){
-  return read8(__max7313_get_input_reg(num));
+  return read8(__max7313_get_input_reg(num))& (1 << (num%8));
 }
 
 uint8_t MAX7313::read8(uint8_t addr) {
